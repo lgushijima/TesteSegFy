@@ -1,0 +1,69 @@
+﻿@{
+
+    var ssn = SegFy.Classes.CookiesManagement.Get(SegFy.Resources.Resource.UserCookieName);
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+    @Styles.Render("~/bundles/css")
+    @Scripts.Render("~/bundles/scripts")
+    <script>
+        $(document).ready(function () {
+            _ncore.initialize();
+            $.ajaxSetup({ cache: false });
+            $("form").attr("autocomplete", "off");
+        });
+    </script>
+</head>
+<body class="app">
+    <header class="shadow-sm">
+        <nav class="navbar navbar-expand navbar-light bg-light">
+            <a class="navbar-brand" href="/home">
+                <img src="/Content/img/logo_segfy_top.png" height="30" alt="SegFy">
+            </a>
+            
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/Home">Home</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/Seguro">Seguros</a>
+                    </li>
+                </ul>
+
+
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <span class="navbar-text">
+                            Olá @(((SegFy.Business.Models.UsuarioModel)ssn).Login)!
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-primary btn-sm ml-3 my-1 text-white" href="#" onclick="return ConfirmarLogoff()">
+                            Sair
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container body-content">
+        @RenderBody()
+    </div>
+
+    <footer class="bg-dark justify-content-center">
+        <small class="text-white">&copy; @DateTime.Now.Year - Gustavo Ushijima</small>
+    </footer>
+</body>
+</html>

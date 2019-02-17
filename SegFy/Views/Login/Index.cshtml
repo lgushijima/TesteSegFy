@@ -1,0 +1,70 @@
+﻿
+@{
+    Layout = null;
+    bool expirado = !string.IsNullOrEmpty(Request.QueryString["expirado"]);
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+    @Styles.Render("~/bundles/css")
+    @Scripts.Render("~/bundles/scripts")
+
+    <script>
+        $(document).ready(function () {
+            _ncore.initialize();
+            $.ajaxSetup({ cache: false });
+            $("form").attr("autocomplete", "off");
+            $("#txtLogin").focus();
+
+            @if (expirado)
+            {
+                <text>
+                    $.notify({ message: 'Sua sessão expirou! Efetune novamente o login para acessar a aplicação.' }, { type: 'danger' });
+                </text>
+            }
+        });
+    </script>
+</head>
+<body class="single">
+    <div class="d-table w-100 h-100">
+        <div class="d-table-cell align-middle pb-5">
+            <div class="row justify-content-center">
+                <div class="col-10 col-sm-7 col-md-5 col-lg-4 col-xl-3">
+                    <div class="bg-white m-1 shadow rounded">
+                        <div class="login p-3">
+                            <img src="/Content/IMG/logo_segfy_top.png" alt="SegFy" />
+                            <p class="my-4">Autenticação de Usuário</p>
+
+                            <form id="frmLogin" autocomplete="off" onsubmit="return false;" onkeypress="defaultButton(event, ValidarLogin)">
+                                <div class="form-group">
+                                    <input id="txtLogin" type="text" class="form-control required" data-property="Login" placeholder="Usuário" autocomplete="off">
+                                </div>
+                                <div class="form-group">
+                                    <input id="txtSenha" type="password" class="form-control required" data-property="Senha" placeholder="Senha" autocomplete="off">
+                                </div>
+                                <div class="text-left">
+                                    <input type="checkbox" id="cbx-lembrar-usuario" class="bool" data-property="Lembrar">
+                                    <label for="cbx-lembrar-usuario" class="small"> Lembrar meu usuário</label>
+                                </div>
+                                <div class="actions mt-2">
+                                    <a href="#" class="btn btn-dark btn-block" title="Entrar" onclick="return ValidarLogin()">Entrar</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,302 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#txtCadastroSeguroPlaca").ninjaMask("aaa 9*99");
+        $("#txtPesquisa").focus();
+        CarregarGridSeguro();
+    });
+
+
+    function CarregarGridSeguro() {
+        var columnsModel = new Array();
+        columnsModel.push({ header: "", width: 76, buttons: ["edit", "delete"] });
+        columnsModel.push({
+            header: "CPF/CNPJ do Cliente", property: "CPFCNPJ", width: "180px", format: function (p, obj) {
+                if (p.length == 11)
+                    return p.maskFormat("cpf");
+                else
+                    return p.maskFormat("cnpj");
+            }
+        });
+        columnsModel.push({
+            header: "Tipo do Seguro", property: "IDTipo", width: "150px", format: function (p, obj) {
+                switch (p) {
+                    case 1: return "Automóvel";
+                    case 2: return "Residencial";
+                    case 3: return "Vida";
+                }
+            }
+        });
+        columnsModel.push({ header: "Placa", property: "Placa", width: "100px" });
+        columnsModel.push({ header: "Endereço", property: "Endereco", width: "300px" });
+        columnsModel.push({ header: "CPF do Segurado", property: "CPFSegurado", width: "150px", format: function (p, obj) { return p? p.maskFormat("cpf") : ""; } });
+
+        var model = $("#frmPesquisa").readForm();
+        model.Search = $("#txtPesquisa").val();
+
+        $('#divGridSeguro').ninjaGrid({
+            url: '/Seguro/ListarGrid',
+            type: "GET",
+            model: model,
+            columns: columnsModel,
+            sortColumn: "Nome",
+            width: "100%",
+            showFooter:false,
+            minHeight: 250,
+            maxHeight: 400,
+            buttons: {
+                'edit': { css: 'fa fa-edit', title:"editar" },
+                'delete': { css: 'fa fa-trash', title: "excluir" }
+            },
+            events: {
+                'edit': AbrirModalCadastroSeguro,
+                'delete': ExcluirSeguro
+            }
+        });
+
+        return false;
+    }
+
+    function AbrirModalCadastroSeguro(obj) {
+        $(".tipo-seguro").addClass("d-none").removeClass("required");
+        $("#frmCadastroSeguro").clearForm();
+        $("#radCadastroSeguroCPF").click();
+
+        if (obj) {
+            $("input[name=radCadastroSeguroCPFCNPJ][value=" + (obj.CPFCNPJ.length == 11 ? 1 : 2) + "]").click();
+            $("#frmCadastroSeguro").writeForm(obj);
+        }
+
+        modalCadastroSeguro = ninjaModal({
+            title: obj ? "Editar Seguro" : "Cadastrar Novo Seguro",
+            css: 'fade',
+            size: 'modal-md',
+            element: "#modalCadastroSeguro",
+            onLoad: function () {
+                $("#txtCadastroSeguroNome").focus();
+            },
+            buttons: [
+            {
+                text: 'Cancelar',
+                css: 'btn btn-secondary',
+                callback: function (modal) {
+                    modal.close(); //-- close the current modal
+                }
+            },
+            {
+                text: 'Salvar',
+                css: 'btn btn-primary',
+                callback: function (modal) {
+                    return SalvarSeguro();
+                }
+            }
+            ]
+        });
+        return false;
+    }
+
+    function SalvarSeguro() {
+        if ($("#frmCadastroSeguro").valid()) {
+            blockUI({ speed: 'fast' });
+
+            var model = $("#frmCadastroSeguro").readForm();
+
+            callAjaxPostAsync("/Seguro/Salvar", model, function (ret) {
+                unblockUI();
+
+                if (ret && !ret.Error) {
+                    modalCadastroSeguro.close();
+                    $.notify({ message: "Ação realizada com sucesso!" }, { type: 'success' });
+                    CarregarGridSeguro();
+                    $("#txtPesquisa").focus();
+                }
+                else {
+                    $.notify({ message: ret.Message }, { type: 'danger' });
+                }
+            });
+        }
+        else {
+            $.notify({ message: "Alguns campos não foram preenchidos ou estão inválidos. Verique os dados informados e tente novamente." }, { type: 'danger' });
+        }
+        return false;
+    }
+
+    function ExcluirSeguro(obj) {
+        ninjaModal({
+            title: "Atenção!",
+            css: 'fade',
+            size:"modal-sm",
+            html: "Deseja realmente <strong>excluir</strong> este registro?",
+            buttons: [
+                {
+                    text: 'Não',
+                    css: 'btn btn-secondary', },
+                {
+                    text: 'Sim',
+                    css: 'btn btn-primary',
+                    callback: function (modal) {
+                        blockUI({ speed: 'fast' });
+
+                        var model = {};
+                        model.ID = obj.ID;
+
+                        callAjaxPostAsync("/Seguro/Excluir", model, function (ret) {
+                            unblockUI();
+
+                            if (ret && !ret.Error) {
+                                modal.close();
+                                CarregarGridSeguro();
+                                $("#txtPesquisa").focus();
+                                $.notify({ message: "Registro excluído com sucesso!" }, { type: 'success' });
+                            }
+                            else {
+                                $.notify({ message: ret.Message }, { type: 'danger' });
+                            }
+                        });
+                    }
+                }
+            ]
+        });
+    }
+
+    function radCadastroSeguroCPFCNPJ_change(elem) {
+        var idTipo = parseInt($(elem).val(),10);
+        var input = $("#txtCadastroSeguroCPFCNPJ");
+        var lbl = $("#lblCadastroSeguroCPFCNPJ");
+        switch (idTipo) {
+            case 1: {
+                lbl.html("CPF do Cliente");
+                input.removeClass("cnpj").addClass("cpf");
+                input.ninjaMask("999.999.999-99");
+                input.val(input.val().maskFormat("cpf"));
+                break;
+            };
+            case 2: {
+                lbl.html("CNPJ do Cliente");
+                input.addClass("cnpj").removeClass("cpf");
+                input.ninjaMask("99.999.999/9999-99");
+                input.val(input.val().maskFormat("cnpj"));
+                break;
+            };
+        }
+    }
+
+    function cboCadastroSeguroTipo_change(elem) {
+        var idTipo = parseInt($(elem).val(), 10);
+        $(".tipo-seguro").addClass("d-none").removeClass("required");
+        $(".tipo-seguro-" + idTipo).removeClass("d-none").addClass("required");
+    }
+</script>
+
+<div id="content-wrapper">
+
+    <div class="section-title">
+        <h2>Gerenciar Seguros</h2>
+        <span class="line"></span>
+    </div>
+
+
+    <div class="page-content">
+        <div class="row">
+            <form id="frmPesquisa" class="px-3" onsubmit="return false;">
+                <div class="form-row">
+                    <div class="form-group col-12 col-md-2">
+                        <label for="txtPesquisa">Pesquisa</label>
+                        <input type="text" id="txtPesquisa" class="form-control" placeholder="CPF/CNPJ do Cliente" data-property="search" />
+                    </div>
+                    <div class="form-group col-12 col-md-2">
+                        <label for="cboPesquisaTipo">Tipo</label>
+                        <select id="cboPesquisaTipo" class="form-control ninjaCombo no-search" data-property="IDTipo">
+                            <option value="">Todos</option>
+                            <option value="1">Automóvel</option>
+                            <option value="2">Residencial</option>
+                            <option value="3">Vida</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-12 col-md-2">
+                        <label for="txtPesquisaPlaca">Placa</label>
+                        <input type="text" id="txtPesquisaPlaca" class="form-control" placeholder="Placa" data-property="Placa" />
+                    </div>
+                    <div class="form-group col-auto">
+                        <label class="d-none d-md-block">&nbsp;</label>
+                        <button type="button" class="btn btn-dark btn-block" onclick="return CarregarGridSeguro();"><i class="fa fa-search"></i> Pesquisar</button>
+                    </div>
+                    <div class="form-group col-auto ml-0 ml-md-5">
+                        <label class="d-none d-md-block">&nbsp;</label>
+                        <button type="button" class="btn btn-primary btn-block" onclick="AbrirModalCadastroSeguro()"><i class="fa fa-plus"></i> Novo Seguro</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <div id="divGridSeguro"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal" id="modalCadastroSeguro">
+        <form id="frmCadastroSeguro" onsubmit="return false;" onkeypress="defaultButton(event, Salvar)">
+            <input type="hidden" id="txtCadastroSeguroID" data-property="ID" />
+
+            <div class="form-row">
+                <div class="form-group col-12">
+                    <label for="cboCadastroSeguroTipoPessoa">Tipo de Pessoa</label>
+                    <div class="form-control ninjaCheck boxed">
+
+                        <input type="radio" id="radCadastroSeguroCPF" name="radCadastroSeguroCPFCNPJ" value="1" onchange="radCadastroSeguroCPFCNPJ_change(this)" checked="checked" />
+                        <label for="radCadastroSeguroCPF">Pessoa Física</label>
+
+                        <input type="radio" id="radCadastroSeguroCNPJ" name="radCadastroSeguroCPFCNPJ"  value="2" onchange="radCadastroSeguroCPFCNPJ_change(this)" />
+                        <label for="radCadastroSeguroCNPJ">Pessoa Jurídica</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divFormulario">
+                <div class="form-row">
+                    <div class="form-group col-7">
+                        <label for="txtCadastroSeguroCPFCNPJ" id="lblCadastroSeguroCPFCNPJ">CPF do Cliente</label>
+                        <input type="text" id="txtCadastroSeguroCPFCNPJ" class="form-control required cpf" data-property="CPFCNPJ" />
+                    </div>
+
+                    <div class="form-group col-5">
+                        <label for="cboCadastroSeguroTipo">Tipo de Seguro</label>
+                        <select id="cboCadastroSeguroTipo" class="form-control ninjaCombo no-search required" data-property="IDTipo" onchange="cboCadastroSeguroTipo_change(this)">
+                            <option value="">Selecione</option>
+                            <option value="1">Automóvel</option>
+                            <option value="2">Residencial</option>
+                            <option value="3">Vida</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-12 tipo-seguro tipo-seguro-1 d-none">
+                        <label for="txtCadastroSeguroPlaca">Placa</label>
+                        <input type="text" id="txtCadastroSeguroPlaca" class="form-control" data-property="Placa" />
+                    </div>
+
+                    <div class="form-group col-12 tipo-seguro tipo-seguro-2 d-none">
+                        <label for="txtCadastroSeguroEndereco">Endereço</label>
+                        <input type="text" id="txtCadastroSeguroEndereco" class="form-control" data-property="Endereco" />
+                    </div>
+
+                    <div class="form-group col-12 tipo-seguro tipo-seguro-3 d-none">
+                        <label for="txtCadastroSeguroCPF">CPF do Segurado</label>
+                        <input type="text" id="txtCadastroSeguroCPF" class="form-control cpf" data-property="CPFSegurado" />
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
